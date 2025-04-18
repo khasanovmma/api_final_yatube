@@ -64,7 +64,16 @@ class Follow(models.Model):
     )
 
     class Meta:
-        unique_together = ("user", "following")
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(user=models.F("following")),
+                name="prevent_self_follow",
+            ),
+            models.UniqueConstraint(
+                fields=["user", "following"],
+                name="unique_follow",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.user}"
