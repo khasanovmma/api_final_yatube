@@ -1,14 +1,8 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
-from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-    TokenVerifyView,
-)
 
 from posts.models import Follow, Group, Post
 from api.permissions import IsAuthorOrReadOnly
@@ -33,7 +27,7 @@ class PostViewSet(viewsets.ModelViewSet):
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -47,25 +41,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         post = get_object_or_404(Post, pk=self.kwargs["post_id"])
         serializer.save(author=self.request.user, post=post)
-
-
-class JWTViewSet(viewsets.ViewSet):
-    permission_classes = [AllowAny]
-
-    @action(detail=False, methods=["post"], url_path="create")
-    def create_token(self, request, *args, **kwargs):
-        view = TokenObtainPairView.as_view()
-        return view(request._request, *args, **kwargs)
-
-    @action(detail=False, methods=["post"], url_path="refresh")
-    def refresh_token(self, request, *args, **kwargs):
-        view = TokenRefreshView.as_view()
-        return view(request._request, *args, **kwargs)
-
-    @action(detail=False, methods=["post"], url_path="verify")
-    def verify_token(self, request, *args, **kwargs):
-        view = TokenVerifyView.as_view()
-        return view(request._request, *args, **kwargs)
 
 
 class FollowViewSet(viewsets.ModelViewSet):
