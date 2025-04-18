@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
 from rest_framework_simplejwt.views import (
@@ -9,9 +10,14 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
-from posts.models import Group, Post
+from posts.models import Follow, Group, Post
 from api.permissions import IsAuthorOrReadOnly
-from api.serializers import GroupSerializer, PostSerializer, CommentSerializer
+from api.serializers import (
+    FollowSerializer,
+    GroupSerializer,
+    PostSerializer,
+    CommentSerializer,
+)
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -60,3 +66,16 @@ class JWTViewSet(viewsets.ViewSet):
     def verify_token(self, request, *args, **kwargs):
         view = TokenVerifyView.as_view()
         return view(request._request, *args, **kwargs)
+
+
+class FollowViewSet(viewsets.ModelViewSet):
+    queryset = Follow.objects.none()
+    serializer_class = FollowSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ["=following__username"]
+
+    def get_queryset(self):
+        return Follow.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
